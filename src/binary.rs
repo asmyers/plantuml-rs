@@ -27,8 +27,13 @@ pub struct BundlePaths {
 pub fn get_bundle_paths() -> Result<BundlePaths> {
     let dir = EXTRACTED_DIR.get_or_try_init(extract_bundle)?;
 
+    #[cfg(windows)]
+    let java_exe = dir.join("jre").join("bin").join("java.exe");
+    #[cfg(not(windows))]
+    let java_exe = dir.join("jre").join("bin").join("java");
+
     Ok(BundlePaths {
-        java_exe: dir.join("jre").join("bin").join("java.exe"),
+        java_exe,
         plantuml_jar: dir.join("plantuml.jar"),
     })
 }
@@ -36,7 +41,12 @@ pub fn get_bundle_paths() -> Result<BundlePaths> {
 /// Extract the embedded bundle to the cache directory.
 fn extract_bundle() -> Result<PathBuf> {
     let cache_dir = get_cache_dir()?;
+
+    #[cfg(windows)]
     let java_exe = cache_dir.join("jre").join("bin").join("java.exe");
+    #[cfg(not(windows))]
+    let java_exe = cache_dir.join("jre").join("bin").join("java");
+
     let jar_path = cache_dir.join("plantuml.jar");
 
     // If both main files exist, assume extraction is complete
@@ -83,6 +93,16 @@ fn extract_bundle() -> Result<PathBuf> {
         output_file
             .write_all(&contents)
             .map_err(PlantUmlError::BinaryExtraction)?;
+
+        // Set Unix permissions if stored in the ZIP
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Some(mode) = file.unix_mode() {
+                fs::set_permissions(&output_path, fs::Permissions::from_mode(mode))
+                    .map_err(PlantUmlError::BinaryExtraction)?;
+            }
+        }
     }
 
     Ok(cache_dir)
