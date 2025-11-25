@@ -1,7 +1,7 @@
-//! PlantUML Rust wrapper with embedded native binary.
+//! PlantUML Rust wrapper with bundled JRE.
 //!
 //! This crate provides a zero-dependency way to render PlantUML diagrams.
-//! The PlantUML native image is embedded directly in the library.
+//! A JRE and PlantUML JAR are bundled and extracted on first use.
 //!
 //! # Example
 //!
@@ -14,6 +14,7 @@ mod binary;
 mod error;
 mod executor;
 
+pub use binary::{get_bundle_paths, BundlePaths};
 pub use error::{PlantUmlError, Result};
 
 use std::fs;
@@ -126,7 +127,11 @@ Bob --> Alice: Authentication Response
 @enduml"#;
 
         let result = render(input);
-        assert!(result.is_ok(), "Failed to render sequence diagram: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Failed to render sequence diagram: {:?}",
+            result
+        );
     }
 
     #[test]
@@ -141,6 +146,10 @@ class Car {
 @enduml"#;
 
         let result = render(input);
-        assert!(result.is_ok(), "Failed to render class diagram: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Failed to render class diagram: {:?}",
+            result
+        );
     }
 }

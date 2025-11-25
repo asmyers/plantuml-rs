@@ -1,16 +1,19 @@
 [package]
-name = "plantuml"
+name = "plantuml-rs"
 version = "0.1.0"
 edition = "2021"
-description = "Zero-dependency PlantUML wrapper using embedded native image"
+description = "Zero-dependency PlantUML wrapper with bundled JRE"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/YOUR_USERNAME/plantuml-rs"
+keywords = ["plantuml", "uml", "diagram", "svg"]
+categories = ["graphics", "visualization"]
 
 [lib]
 name = "plantuml"
 path = "src/lib.rs"
 
 [[bin]]
-name = "plantuml"
+name = "plantuml-rs"
 path = "src/bin/plantuml.rs"
 
 [dependencies]

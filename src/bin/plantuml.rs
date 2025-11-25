@@ -1,81 +1,41 @@
-//! PlantUML CLI tool
+//! PlantUML CLI passthrough
 //!
-//! Usage:
-//!   plantuml <input.puml> [output.svg]
-//!   plantuml --stdin
+//! This binary passes all arguments directly to the bundled PlantUML JAR.
+//! Run `plantuml-rs --help` to see PlantUML's help.
 
-use std::env;
-use std::io::{self, Read, Write};
-use std::path::Path;
-use std::process::ExitCode;
-
-fn print_usage() {
-    eprintln!("PlantUML Rust wrapper");
-    eprintln!();
-    eprintln!("Usage:");
-    eprintln!("  plantuml <input.puml> [output.svg]  Render a PlantUML file to SVG");
-    eprintln!("  plantuml --stdin                    Read from stdin, write SVG to stdout");
-    eprintln!("  plantuml --help                     Show this help message");
-}
+use std::process::{Command, ExitCode};
 
 fn main() -> ExitCode {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2 {
-        print_usage();
-        return ExitCode::from(1);
-    }
-
-    match args[1].as_str() {
-        "--help" | "-h" => {
-            print_usage();
-            ExitCode::SUCCESS
+    // Get bundle paths (extracts on first run)
+    let paths = match plantuml::get_bundle_paths() {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Error extracting PlantUML bundle: {}", e);
+            return ExitCode::from(1);
         }
-        "--stdin" => {
-            // Read from stdin, write to stdout
-            let mut input = String::new();
-            if let Err(e) = io::stdin().read_to_string(&mut input) {
-                eprintln!("Error reading stdin: {}", e);
-                return ExitCode::from(1);
-            }
+    };
 
-            match plantuml::render(&input) {
-                Ok(svg) => {
-                    if let Err(e) = io::stdout().write_all(svg.as_bytes()) {
-                        eprintln!("Error writing to stdout: {}", e);
-                        return ExitCode::from(1);
-                    }
-                    ExitCode::SUCCESS
-                }
-                Err(e) => {
-                    eprintln!("Error rendering diagram: {}", e);
-                    ExitCode::from(1)
-                }
-            }
-        }
-        input_path => {
-            let input = Path::new(input_path);
+    // Collect all arguments (skip the program name)
+    let args: Vec<String> = std::env::args().skip(1).collect();
 
-            // Determine output path
-            let output_path = if args.len() >= 3 {
-                args[2].clone()
+    // Run: java -jar plantuml.jar <args...>
+    let status = Command::new(&paths.java_exe)
+        .arg("-jar")
+        .arg(&paths.plantuml_jar)
+        .args(&args)
+        .status();
+
+    match status {
+        Ok(s) => {
+            if let Some(code) = s.code() {
+                ExitCode::from(code as u8)
             } else {
-                // Default: replace extension with .svg
-                let stem = input.file_stem().unwrap_or_default().to_string_lossy();
-                format!("{}.svg", stem)
-            };
-            let output = Path::new(&output_path);
-
-            match plantuml::render_file(input, output) {
-                Ok(()) => {
-                    eprintln!("Rendered {} -> {}", input.display(), output.display());
-                    ExitCode::SUCCESS
-                }
-                Err(e) => {
-                    eprintln!("Error: {}", e);
-                    ExitCode::from(1)
-                }
+                ExitCode::from(1)
             }
+        }
+        Err(e) => {
+            eprintln!("Error running PlantUML: {}", e);
+            ExitCode::from(1)
         }
     }
 }

@@ -4,7 +4,8 @@ use std::io::{Cursor, Read, Write};
 use std::path::Path;
 
 const PLANTUML_VERSION: &str = "1.2025.10";
-const PLANTUML_JAR_URL: &str = "https://github.com/plantuml/plantuml/releases/download/v1.2025.10/plantuml-1.2025.10.jar";
+const PLANTUML_JAR_URL: &str =
+    "https://github.com/plantuml/plantuml/releases/download/v1.2025.10/plantuml-1.2025.10.jar";
 
 // Eclipse Temurin JRE 21 for Windows x64 (LTS version)
 const JRE_URL: &str = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jre_x64_windows_hotspot_21.0.5_11.zip";
@@ -22,14 +23,23 @@ fn main() {
 
     // Check if bundle already exists
     if bundle_zip.exists() {
-        println!("cargo:warning=PlantUML bundle already exists at {:?}", bundle_zip);
+        println!(
+            "cargo:warning=PlantUML bundle already exists at {:?}",
+            bundle_zip
+        );
         return;
     }
 
     // Download PlantUML JAR
-    println!("cargo:warning=Downloading PlantUML JAR v{}...", PLANTUML_VERSION);
+    println!(
+        "cargo:warning=Downloading PlantUML JAR v{}...",
+        PLANTUML_VERSION
+    );
     let jar_bytes = download_file(PLANTUML_JAR_URL);
-    println!("cargo:warning=Downloaded PlantUML JAR: {} bytes", jar_bytes.len());
+    println!(
+        "cargo:warning=Downloaded PlantUML JAR: {} bytes",
+        jar_bytes.len()
+    );
 
     // Download JRE
     println!("cargo:warning=Downloading Eclipse Temurin JRE 21...");
@@ -56,7 +66,10 @@ fn download_file(url: &str) -> Vec<u8> {
         panic!("Failed to download {}: HTTP {}", url, response.status());
     }
 
-    response.bytes().expect("Failed to read response body").to_vec()
+    response
+        .bytes()
+        .expect("Failed to read response body")
+        .to_vec()
 }
 
 fn create_bundle_zip(output_path: &Path, jar_bytes: &[u8], jre_zip_bytes: &[u8]) {
@@ -65,8 +78,7 @@ fn create_bundle_zip(output_path: &Path, jar_bytes: &[u8], jre_zip_bytes: &[u8])
     let file = File::create(output_path).expect("Failed to create bundle ZIP");
     let mut zip_writer = zip::ZipWriter::new(file);
 
-    let options = SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated);
+    let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
     // Add the PlantUML JAR
     zip_writer
@@ -81,14 +93,13 @@ fn create_bundle_zip(output_path: &Path, jar_bytes: &[u8], jre_zip_bytes: &[u8])
     let mut jre_archive = zip::ZipArchive::new(cursor).expect("Failed to open JRE ZIP");
 
     for i in 0..jre_archive.len() {
-        let mut file = jre_archive.by_index(i).expect("Failed to read JRE ZIP entry");
+        let mut file = jre_archive
+            .by_index(i)
+            .expect("Failed to read JRE ZIP entry");
         let name = file.name().to_string();
 
         // Skip the top-level directory (jdk-21.0.5+11-jre/)
-        let relative_path = name
-            .split_once('/')
-            .map(|(_, rest)| rest)
-            .unwrap_or(&name);
+        let relative_path = name.split_once('/').map(|(_, rest)| rest).unwrap_or(&name);
 
         if relative_path.is_empty() {
             continue;

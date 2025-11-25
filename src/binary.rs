@@ -25,7 +25,7 @@ pub struct BundlePaths {
 /// The bundle is extracted to the user's cache directory on first call.
 /// Subsequent calls return the cached paths.
 pub fn get_bundle_paths() -> Result<BundlePaths> {
-    let dir = EXTRACTED_DIR.get_or_try_init(|| extract_bundle())?;
+    let dir = EXTRACTED_DIR.get_or_try_init(extract_bundle)?;
 
     Ok(BundlePaths {
         java_exe: dir.join("jre").join("bin").join("java.exe"),
@@ -49,13 +49,14 @@ fn extract_bundle() -> Result<PathBuf> {
 
     // Extract the bundle ZIP
     let cursor = Cursor::new(PLANTUML_BUNDLE);
-    let mut archive = zip::ZipArchive::new(cursor)
-        .map_err(|e| PlantUmlError::BinaryExtraction(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+    let mut archive = zip::ZipArchive::new(cursor).map_err(|e| {
+        PlantUmlError::BinaryExtraction(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    })?;
 
     for i in 0..archive.len() {
-        let mut file = archive
-            .by_index(i)
-            .map_err(|e| PlantUmlError::BinaryExtraction(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+        let mut file = archive.by_index(i).map_err(|e| {
+            PlantUmlError::BinaryExtraction(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+        })?;
 
         let name = file.name().to_string();
 
