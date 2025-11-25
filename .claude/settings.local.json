@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:plantuml.com)",
+      "WebFetch(domain:docs.bell-sw.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:deepwiki.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
